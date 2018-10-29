@@ -1,0 +1,3 @@
+# not include file
+*.bak
+*.bak.*
