@@ -45,22 +45,105 @@ http://sourceforge.net/adobe/cmap/wiki/License/
 <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
 <script src="l10n.js"></script>
 <script src="../build/pdf.js"></script>
-
-
-
-    <script src="debugger.js"></script>
-    <script src="viewer.js"></script>
+<script src="debugger.js"></script>
+<script src="viewer.js"></script>
 
   </head>
+<script src="../jquery-1.11.1.min.js"></script>
 <script type="text/javascript">
 	// 语言设置
 	PDFJS.locale = 'zh-CN';// zh-CN af
-	console.info('+++++++++++++++++++++++++++++');
+	console.info('+++++++++++++++++++++++++++++=');
 	// console.log(_pdfjsLib);
-	console.info(PDFJS);
+	// console.info(PDFJS);
+
+	var $sliderMoving = false;
+	var path;
+
+	// 页面加载后执行的方法
+	function start() {
+		var content = "";
+		var reg = new RegExp("(^|&)content=([^&]*)(&|$)");
+		var r = window.location.search.substring(1).match(reg);
+		if (r != null) {
+			content = unescape(r[2]);
+			content = decodeURI(decodeURI(content));
+		}
+		var t = document.getElementById('findInput');
+		t.value = content;
+		var b = document.getElementById('findNext');
+		b.click();
+		// viewOutline viewAttachments
+		// document.getElementById('print').style.display = "none";
+		var buttonState = ('<%=buttonState%>');
+		if (buttonState.indexOf('print') < 0) {
+			//document.getElementById('print').style.display = "none";
+		}
+		if (buttonState.indexOf('download') < 0) {
+			document.getElementById('download').style.display = "none";
+		}
+	}
+
+	// 后台数据记录
+	function PrintPdfRecord() {
+		var className = ('<%=className%>');
+		var ownerId = ('<%=ownerId%>');
+		var type = ('<%=type%>');
+		var path = path;
+		var postData = {
+			"ownerId" : ownerId,
+			"type" : type,
+			"className" : className,
+			"path" : path
+		};
+		postData = (function(obj) { // 转成post需要的字符串.
+			var str = "";
+			for (var prop in obj) {
+				str += prop + "=" + obj[prop] + "&"
+			}
+			return str;
+		})(postData);
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", "PrintOperaTing_DocumentAction.action", true);
+		xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xhr.onreadystatechange = function() {
+			var XMLHttpReq = xhr;
+			if (XMLHttpReq.readyState == 4) {
+				if (XMLHttpReq.status == 200) {
+					var text = XMLHttpReq.responseText;
+					console.log(text);
+				}
+			}
+		};
+		xhr.send(postData);
+	}
+
+	// 暂时IE无法打印
+	function framePrint() {
+		 var iframe = document.getElementById("printFrame");
+		 console.log(path);
+		 console.log(!iframe);
+		 if (!iframe) {
+			 var iframe = document.createElement('iframe');
+			 iframe.id = 'printFrame'
+			 iframe.style.display = 'none';
+			 iframe.src = path;
+			 document.body.appendChild(iframe);
+		 }
+		 console.log(iframe.src);
+		 iframe.contentWindow.print();
+	}
+
+	// 更改pdf的文件源 实现动态刷新pdf而不更新pdfjs组件
+	function changeSrc(url) {
+		path = url;
+// 		webViewerLoad();
+		PDFViewerApplication.open(url);
+	}
 </script>
 
-  <body tabindex="1" class="loadingInProgress">
+  <!-- <body tabindex="1" class="loadingInProgress"> -->
+  <body tabindex="1" class="loadingInProgress" onload="start()"> <!-- @author DHJT 2018-10-29 -->
     <div id="outerContainer">
 
       <div id="sidebarContainer">
@@ -262,8 +345,10 @@ http://sourceforge.net/adobe/cmap/wiki/License/
                     data-l10n-id="page_rotate_ccw"></menuitem>
         </menu>
 
-        <div id="viewerContainer" tabindex="0">
-          <div id="viewer" class="pdfViewer"></div>
+		<div id="PDFView" class="PDFView">
+	        <div id="viewerContainer" tabindex="0">
+	          <div id="viewer" class="pdfViewer"></div>
+	        </div>
         </div>
 
         <div id="errorWrapper" hidden='true'>
@@ -351,15 +436,15 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
 <div id="mozPrintCallback-shim" hidden>
-  <style>
+<style>
 @media print {
   #printContainer div {
     page-break-after: always;
     page-break-inside: avoid;
   }
 }
-  </style>
-  <style scoped>
+</style>
+<style scoped>
 #mozPrintCallback-shim {
   position: fixed;
   top: 0;
