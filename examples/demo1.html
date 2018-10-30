@@ -1,0 +1,47 @@
+<!-- @author DHJT 2018-10-30 -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>单页PDF使用示例</title>
+        <script src="../build/pdf.js"></script>
+        <script>
+            function showPdf() {
+                PDFJS.workerSrc = '../build/pdf.worker.js';
+                PDFJS.getDocument("../web/compressed.tracemonkey-pldi-09.pdf").then(function getPdfHelloWorld(pdf) {
+                    //
+                    // 获取第一页数据
+                    //
+                    pdf.getPage(1).then(function getPageHelloWorld(page) {
+                        var scale = 1.5;
+                        var viewport = page.getViewport(scale);
+
+                        //
+                        // Prepare canvas using PDF page dimensions
+                        //
+                        var canvas = document.getElementById('the-canvas');
+                        var context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        //
+                        // Render PDF page into canvas context
+                        //
+                        var renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        page.render(renderContext);
+                    });
+                });
+
+            }
+        </script>
+    </head>
+
+    <body>
+        <a href="javascript:void(0)" target="_blank" onclick="showPdf()">显示pdf文档</a>
+        <canvas id="the-canvas"></canvas>
+    </body>
+
+</html>
